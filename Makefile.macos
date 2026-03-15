@@ -1,0 +1,61 @@
+include Makefile
+
+APP_NAME := Flappy
+APP_BUNDLE := .build/$(APP_NAME).app
+DMG_PATH := .build/$(APP_NAME).dmg
+DMG_STAGING := .build/dmg
+APP_CONTENTS := $(APP_BUNDLE)/Contents
+APP_MACOS := $(APP_CONTENTS)/MacOS
+APP_FRAMEWORKS := $(APP_CONTENTS)/Frameworks
+APP_RESOURCES := $(APP_CONTENTS)/Resources
+APP_EXECUTABLE := $(APP_MACOS)/$(APP_NAME)
+APP_PLIST := $(APP_CONTENTS)/Info.plist
+APP_PLIST_SRC := packaging/Info.plist
+
+RESVG_LIBDIR := $(shell pkg-config --variable=libdir resvg)
+GMP_LIBDIR := $(shell pkg-config --variable=libdir gmp)
+LIBUV_LIBDIR := $(shell pkg-config --variable=libdir libuv)
+SDL3_LIBDIR := $(shell pkg-config --variable=libdir sdl3)
+
+RESVG_DYLIB := $(firstword $(wildcard $(RESVG_LIBDIR)/libresvg*.dylib))
+GMP_DYLIB := $(firstword $(wildcard $(GMP_LIBDIR)/libgmp*.dylib))
+LIBUV_DYLIB := $(firstword $(wildcard $(LIBUV_LIBDIR)/libuv*.dylib))
+SDL3_DYLIB := $(firstword $(wildcard $(SDL3_LIBDIR)/libSDL3*.dylib))
+
+RESVG_DYLIB_NAME := $(notdir $(RESVG_DYLIB))
+GMP_DYLIB_NAME := $(notdir $(GMP_DYLIB))
+LIBUV_DYLIB_NAME := $(notdir $(LIBUV_DYLIB))
+SDL3_DYLIB_NAME := $(notdir $(SDL3_DYLIB))
+
+APP_DYLIBS := $(RESVG_DYLIB) $(GMP_DYLIB) $(LIBUV_DYLIB) $(SDL3_DYLIB)
+
+$(APP_PLIST): $(APP_PLIST_SRC)
+	mkdir -p $(APP_CONTENTS)
+	cp $(APP_PLIST_SRC) $(APP_PLIST)
+
+app: build $(APP_PLIST)
+	rm -rf $(APP_BUNDLE)
+	mkdir -p $(APP_CONTENTS)
+	cp $(APP_PLIST_SRC) $(APP_PLIST)
+	mkdir -p $(APP_MACOS) $(APP_FRAMEWORKS) $(APP_RESOURCES)
+	cp .lake/build/bin/flappy $(APP_EXECUTABLE)
+	cp $(APP_DYLIBS) $(APP_FRAMEWORKS)/
+	install_name_tool -change $(SDL3_DYLIB) @executable_path/../Frameworks/$(SDL3_DYLIB_NAME) $(APP_EXECUTABLE)
+	install_name_tool -change $(RESVG_DYLIB) @executable_path/../Frameworks/$(RESVG_DYLIB_NAME) $(APP_EXECUTABLE)
+	install_name_tool -change $(GMP_DYLIB) @executable_path/../Frameworks/$(GMP_DYLIB_NAME) $(APP_EXECUTABLE)
+	install_name_tool -change $(LIBUV_DYLIB) @executable_path/../Frameworks/$(LIBUV_DYLIB_NAME) $(APP_EXECUTABLE)
+	install_name_tool -id @executable_path/../Frameworks/$(SDL3_DYLIB_NAME) $(APP_FRAMEWORKS)/$(SDL3_DYLIB_NAME)
+	install_name_tool -id @executable_path/../Frameworks/$(RESVG_DYLIB_NAME) $(APP_FRAMEWORKS)/$(RESVG_DYLIB_NAME)
+	install_name_tool -id @executable_path/../Frameworks/$(GMP_DYLIB_NAME) $(APP_FRAMEWORKS)/$(GMP_DYLIB_NAME)
+	install_name_tool -id @executable_path/../Frameworks/$(LIBUV_DYLIB_NAME) $(APP_FRAMEWORKS)/$(LIBUV_DYLIB_NAME)
+	codesign --force --deep --sign - $(APP_BUNDLE)
+
+dmg: app
+	rm -rf $(DMG_STAGING) $(DMG_PATH)
+	mkdir -p $(DMG_STAGING)
+	cp -R $(APP_BUNDLE) $(DMG_STAGING)/
+	ln -s /Applications $(DMG_STAGING)/Applications
+	hdiutil create -volname $(APP_NAME) -srcfolder $(DMG_STAGING) -ov -format UDZO $(DMG_PATH)
+
+clean-macos:
+	rm -rf $(APP_BUNDLE) $(DMG_STAGING) $(DMG_PATH)

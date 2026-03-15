@@ -1,0 +1,23 @@
+name: Lean Action CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+      - run: |
+          brew install gmp libuv sdl3 pkgconf resvg
+      - run: |
+          # prefetch raylean dependency, required for bundle build
+          lake update
+      - run: |
+          make

@@ -1,0 +1,44 @@
+.DEFAULT_GOAL := build
+
+RAYLIB_VENDOR_DIR := vendor/raylib-5.5
+RAYLIB_SRC_DIR := $(RAYLIB_VENDOR_DIR)/src
+RAYLIB_BUILD_DIR ?= .build/raylib-sdl
+RAYLIB_LIB_DIR := $(RAYLIB_BUILD_DIR)/lib
+RAYLIB_LIB := $(RAYLIB_LIB_DIR)/libraylib.a
+RAYLIB_SHIM_DIR := $(RAYLIB_BUILD_DIR)/include
+MACOSX_DEPLOYMENT_TARGET ?= 12.0
+NATIVE_COMPILER ?= cc
+
+SDL_PKG_CFLAGS := $(shell pkg-config --cflags sdl3)
+SDL_PKG_LIBS := $(shell pkg-config --libs sdl3)
+
+.PHONY: build clean
+
+build: $(RAYLIB_LIB)
+
+# Raylib includes headers as SDL.h but SDL3 packages its headers within a SDL3
+# directory so we provide shims
+$(RAYLIB_SHIM_DIR)/SDL.h:
+	mkdir -p $(RAYLIB_SHIM_DIR)
+	printf '#include <SDL3/SDL.h>\n' > $@
+
+$(RAYLIB_SHIM_DIR)/SDL_opengl.h:
+	mkdir -p $(RAYLIB_SHIM_DIR)
+	printf '#include <SDL3/SDL_opengl.h>\n' > $@
+
+$(RAYLIB_LIB): $(RAYLIB_SHIM_DIR)/SDL.h $(RAYLIB_SHIM_DIR)/SDL_opengl.h
+	mkdir -p $(RAYLIB_LIB_DIR)
+	MACOSX_DEPLOYMENT_TARGET=$(MACOSX_DEPLOYMENT_TARGET) \
+	$(MAKE) -C $(RAYLIB_SRC_DIR) \
+		CC=$(NATIVE_COMPILER) \
+		PLATFORM=PLATFORM_DESKTOP_SDL \
+		RAYLIB_LIBTYPE=STATIC \
+		RAYLIB_RELEASE_PATH=$(abspath $(RAYLIB_LIB_DIR)) \
+		SDL_INCLUDE_PATH=$(abspath $(RAYLIB_SHIM_DIR)) \
+		SDL_LIBRARIES="$(SDL_PKG_LIBS)" \
+		CUSTOM_CFLAGS="$(SDL_PKG_CFLAGS)" \
+		$(RAYLIB_EXTRA_MAKE_VARS)
+
+clean:
+	if [ -d "$(RAYLIB_SRC_DIR)" ]; then $(MAKE) -C $(RAYLIB_SRC_DIR) clean; fi
+	rm -rf $(RAYLIB_LIB_DIR) $(RAYLIB_SHIM_DIR)

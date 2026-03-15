@@ -1,0 +1,25 @@
+name = "flappy"
+version = "0.1.0"
+defaultTargets = ["flappy"]
+
+[leanOptions]
+autoImplicit = false
+
+[[require]]
+name = "raylean"
+git = "https://github.com/funexists/raylean.git"
+rev = "aef7bd78b7ff24d5deeb01d2a37277e8acc6c260"
+options = { bundle = "on" }
+
+[[require]]
+name = "batteries"
+git = "https://github.com/leanprover-community/batteries.git"
+rev = "v4.28.0"
+
+[[lean_lib]]
+name = "Flappy"
+
+[[lean_exe]]
+name = "flappy"
+root = "Main"
+moreLinkArgs = [".build/raylib-sdl/lib/libraylib.a", "-lresvg", "-lsdl3"]
