@@ -11,6 +11,7 @@ BUNDLE_BUILD_DIR := .build/bundle
 BUNDLE_GEN := $(BUNDLE_BUILD_DIR)/makeBundle
 BUNDLE_INCLUDE_DIR := $(BUNDLE_BUILD_DIR)/include
 BUNDLE_HEADER := $(BUNDLE_INCLUDE_DIR)/bundle.h
+BUNDLE_GEN_LEAN := $(RAYLEAN_DIR)/scripts/makeBundle.lean
 RESOURCES := $(shell find $(ASSETS_DIR) -type f | sort)
 CPATH := $(BUNDLE_INCLUDE_DIR)
 
@@ -22,9 +23,13 @@ ifdef LAKE_CURDIR
 LAKE_ARGS += -d $(LAKE_CURDIR)
 endif
 
-$(BUNDLE_GEN): $(RAYLEAN_DIR)/scripts/makeBundle.lean
+$(BUNDLE_GEN_LEAN):
+	# side effect: fetch the dependencies
+	lake update --keep-toolchain
+
+$(BUNDLE_GEN): $(BUNDLE_GEN_LEAN)
 	mkdir -p $(BUNDLE_BUILD_DIR)
-	lean -c $(BUNDLE_GEN).c $(RAYLEAN_DIR)/scripts/makeBundle.lean
+	lean -c $(BUNDLE_GEN).c $(BUNDLE_GEN_LEAN)
 	leanc $(BUNDLE_GEN).c -o $(BUNDLE_GEN)
 
 $(BUNDLE_HEADER): $(BUNDLE_GEN) $(RESOURCES)

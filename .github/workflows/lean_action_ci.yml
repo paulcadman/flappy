@@ -17,7 +17,4 @@ jobs:
       - run: |
           brew install gmp libuv sdl3 pkgconf resvg
       - run: |
-          # prefetch raylean dependency, required for bundle build
-          lake update
-      - run: |
           make
