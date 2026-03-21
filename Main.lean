@@ -9,7 +9,6 @@ open Flappy
 def config : Config :=
   let width : Nat := 800
   let height : Nat := 600
-  let flapImpulse : Rat := -height * 0.65
   let pipeConfig := {
     speed := 180,
     width := 80,
@@ -19,9 +18,10 @@ def config : Config :=
   }
 
   {
+    yScale := 2
     window := {width, height},
-    bird := {x := width / 3, flapImpulse},
-    gravity := 3 * height,
+    bird := {x := width / 3, flapVelocity := -13},
+    gravityStep := 1,
     pipe := pipeConfig
   }
 
@@ -55,8 +55,8 @@ def main : IO Unit := do
     let seed : Nat := bytes.toUInt64BE! |>.toNat
     pure {
       bird :=  {
-          y := config.window.height / 3,
-          velocity := config.bird.flapImpulse
+          y := config.yScale * config.window.height / 3,
+          velocity := config.bird.flapVelocity
         }
       pipes := [],
       randGen := mkStdGen seed
