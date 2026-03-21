@@ -3,7 +3,7 @@ import Raylean
 open Raylean
 open Raylean.Types
 
-namespace Flappy
+namespace FlappyRaylean
 
 variable
   {m}
@@ -45,4 +45,4 @@ def load : m Assets := do
 
 end Assets
 
-end Flappy
+end FlappyRaylean

@@ -1,10 +1,14 @@
 import Raylean
 import Batteries.Data.Rat
 import Flappy
+import FlappyRaylean
 
 open Raylean
 open Raylean.Types
 open Flappy
+open FlappyRaylean
+
+abbrev AppM := StateT State (ReaderT Config (ReaderT Assets IO))
 
 def config : Config :=
   let width : Nat := 800
@@ -15,19 +19,28 @@ def config : Config :=
     spacing := 280,
     gapSize := 180,
     margin := 20
+    color := Color.Raylean.darkgreen
+  }
+
+  let windowConfig := {
+    width,
+    height,
+    backgroundColor := Color.Raylean.skyblue,
+    scoreTextColor := Color.black,
+    endTextColor := Color.red
   }
 
   {
     yScale := 2
-    window := {width, height},
+    window := windowConfig,
     bird := {x := width / 3, flapVelocity := -13},
     gravityStep := 1,
-    pipe := pipeConfig
+    pipe := pipeConfig,
   }
 
 def renderLoop
-  (initState : IO State) : StateT State (ReaderT Config (ReaderT Assets IO)) Unit := do
-  let tickDt : Float := (← read).tickDt
+  (initState : IO State) : AppM Unit := do
+  let tickDt : Float := (← readThe Config).tickDt
   let mut acc : Float := 0
   while (not (← windowShouldClose)) do
     let frameDt ← getFrameTime

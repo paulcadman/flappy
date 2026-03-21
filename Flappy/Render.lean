@@ -1,56 +1,61 @@
-import Raylean
-import Flappy.Assets
 import Flappy.Bird
 import Flappy.Config
 import Flappy.Pipe
 import Flappy.State
-
-open Raylean
-open Raylean.Types
+import Flappy.Types
 
 namespace Flappy
+
+inductive AssetName where
+  | birdyUp
+  | birdyDown
+
+class MonadRender (m : Type → Type) [MonadLiftT IO m] where
+  drawRectangle : Rectangle → Color → m Unit
+  clearBackground : Color → m Unit
+  drawAsset : (name : AssetName) → (dest : Rectangle) → m Unit
+  drawText : String → (x : Nat) → (y : Nat) → (size : Nat) → Color → m Unit
 
 variable
   {m}
   [Monad m]
-  [MonadReader Config m]
-  [MonadReaderOf Assets m]
+  [MonadReaderOf Config m]
   [MonadLiftT IO m]
+  [MonadRender m]
 
 def Pipe.render
   (pipe : Pipe) : m Unit := do
-  drawRectangleRec
+  MonadRender.drawRectangle
     { x := pipe.leftEdge
       y := 0
       width := pipe.width
       height := pipe.gapTop }
-    Color.Raylean.darkgreen
-  let windowHeight : Rat := (← read).window.height
-  drawRectangleRec
+    (← readThe Config).pipe.color
+  let windowHeight : Rat := (← readThe Config).window.height
+  MonadRender.drawRectangle
     { x := pipe.leftEdge
       y := pipe.gapBottom
       width := pipe.width
       height := windowHeight - pipe.gapBottom }
-    Color.Raylean.darkgreen
+    (← readThe Config).pipe.color
 
 def Bird.render
   (bird : Bird) : m Unit := do
-  let birdyUpAsset := (← readThe Assets).birdyUp
-  let birdyDownAsset := (← readThe Assets).birdyDown
   let dest : Rectangle :=
          { x := ← bird.leftEdge
            y := ← bird.topEdge
            width := ← bird.drawWidth
            height := ← bird.drawHeight }
-  let asset := if bird.velocity < 0 then birdyUpAsset else birdyDownAsset
-  asset.render dest
+  if bird.velocity < 0
+    then MonadRender.drawAsset .birdyUp dest
+    else MonadRender.drawAsset .birdyDown dest
 
 def State.render
   (s : State) : m Unit := do
-  clearBackground Color.Raylean.skyblue
+  MonadRender.clearBackground (← readThe Config).window.backgroundColor
   for p in s.pipes do p.render
   s.bird.render
-  drawText s!"score : {s.score}" 20 20 20 Color.black
-  if (← s.hasCollision) then drawText s!"GAME OVER - SCORE: {s.score} - press R to restart" ((← read).window.width / 2 - 200) ((← read).window.height / 2 - 20) 20 Color.red
+  MonadRender.drawText s!"score : {s.score}" 20 20 20 (← readThe Config).window.scoreTextColor
+  if (← s.hasCollision) then MonadRender.drawText s!"GAME OVER - SCORE: {s.score} - press R to restart" ((← readThe Config).window.width / 2 - 200) ((← readThe Config).window.height / 2 - 20) 20 (← readThe Config).window.endTextColor
 
 end Flappy

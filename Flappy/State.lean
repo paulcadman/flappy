@@ -37,10 +37,10 @@ section step
 variable
   {m}
   [Monad m]
-  [MonadReader Config m]
+  [MonadReaderOf Config m]
 
 def spawnPipe (g : StdGen) : m (StdGen × Pipe) := do
-  let config ← read
+  let config ← readThe Config
   let minGapTop := config.pipe.margin
   let maxGapTop := config.window.height - config.pipe.margin - config.pipe.gapSize
   let (g, gapTop) ←
@@ -56,7 +56,7 @@ def spawnPipe (g : StdGen) : m (StdGen × Pipe) := do
           gapBottom := gapTop + config.pipe.gapSize })
 
 def shouldSpawnPipe (pipes : List Pipe) : m Bool := do
-  let config ← read
+  let config ← readThe Config
   let rightmostX : Option Rat :=
     pipes.foldl
       (fun acc p =>

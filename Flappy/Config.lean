@@ -1,4 +1,4 @@
-import Raylean
+import Flappy.Types
 
 namespace Flappy
 
@@ -9,6 +9,12 @@ structure Window where
   height : Nat
   /-- Window width in pixels -/
   width : Nat
+  /-- The color of the window background -/
+  backgroundColor : Color
+  /-- The color of the score text -/
+  scoreTextColor : Color
+  /-- The color of the end text -/
+  endTextColor : Color
 
 structure Bird where
   /-- Horizonal center position in pixels -/
@@ -36,6 +42,8 @@ structure Pipe where
   gapSize : Nat := 160
   /-- Minimum margin from the top and bottom of the window in pixels -/
   margin : Nat := 5
+  /-- The color of the pipe --/
+  color : Color
 
 end Config
 

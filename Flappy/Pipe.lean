@@ -14,7 +14,7 @@ namespace Pipe
 variable
   {m}
   [Monad m]
-  [MonadReader Config m]
+  [MonadReaderOf Config m]
 
 def leftEdge (p : Pipe) : Rat := p.x
 
@@ -27,7 +27,7 @@ def collides (p : Pipe) (b : Bird) : m Bool := do
     && ((← b.topEdge) <= p.gapTop || (← b.bottomEdge) >= p.gapBottom)
 
 def step (p : Pipe) : m Pipe := do
-  let config ← read
+  let config ← readThe Config
   let dx := config.pipe.speed * config.tickDt
   pure { p with x := p.x - dx }
 
