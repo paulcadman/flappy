@@ -25,4 +25,4 @@ name = "FlappyRaylean"
 [[lean_exe]]
 name = "flappy"
 root = "Main"
-moreLinkArgs = [".build/raylib-sdl/lib/libraylib.a", "-lresvg", "-lsdl3"]
+moreLinkArgs = [".build/raylib-sdl/lib/libraylib.a", "-lresvg", "-lSDL3"]
