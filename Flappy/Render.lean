@@ -10,7 +10,7 @@ inductive AssetName where
   | birdyUp
   | birdyDown
 
-class MonadRender (m : Type → Type) [MonadLiftT IO m] where
+class MonadRender (m : Type → Type) where
   drawRectangle : Rectangle → Color → m Unit
   clearBackground : Color → m Unit
   drawAsset : (name : AssetName) → (dest : Rectangle) → m Unit
@@ -20,7 +20,6 @@ variable
   {m}
   [Monad m]
   [MonadReaderOf Config m]
-  [MonadLiftT IO m]
   [MonadRender m]
 
 def Pipe.render
