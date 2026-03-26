@@ -13,8 +13,6 @@ structure Window where
   backgroundColor : Color
   /-- The color of the score text -/
   scoreTextColor : Color
-  /-- The color of the end text -/
-  endTextColor : Color
 
 structure Bird where
   /-- Horizonal center position in pixels -/
@@ -47,6 +45,16 @@ structure Pipe where
 
 end Config
 
+structure GameOver where
+  /-- Text displayed on game over -/
+  text : String
+  /-- Game over screen position -/
+  position : Nat × Nat
+  /-- Game over text size -/
+  size : Nat
+  /-- Color of the game over text -/
+  color : Color
+
 structure Config where
   /-- Physics tick duration in seconds -/
   tickDt : Rat := 1 / 60
@@ -62,9 +70,7 @@ structure Config where
   /-- Downward acceleration added to the bird velocity each tick in
   y-scaled units per tick -/
   gravityStep : Int := 1
-  /-- Text displayed on game over -/
-  gameOverText : String
-  /-- Game over text position -/
-  gameOverPosition : Nat × Nat
+  /-- Configutation of the game over text -/
+  gameOver : GameOver
 
 end Flappy

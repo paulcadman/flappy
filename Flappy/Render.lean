@@ -56,6 +56,12 @@ def State.render
   for p in s.pipes do p.render
   s.bird.render
   MonadRender.drawText s!"score : {s.score}" 20 20 20 config.window.scoreTextColor
-  if (← s.hasCollision) then MonadRender.drawText config.gameOverText config.gameOverPosition.fst config.gameOverPosition.snd 20 (← readThe Config).window.endTextColor
+  if (← s.hasCollision) then
+    MonadRender.drawText
+      config.gameOver.text
+      config.gameOver.position.fst
+      config.gameOver.position.snd
+      config.gameOver.size
+      config.gameOver.color
 
 end Flappy
