@@ -36,6 +36,8 @@ def config : Config :=
     bird := {x := width / 3, flapVelocity := -13},
     gravityStep := 1,
     pipe := pipeConfig,
+    gameOverText := "GAME OVER - press R to restart"
+    gameOverPosition := (windowConfig.width / 2 - 150, windowConfig.height / 2 - 20)
   }
 
 def renderLoop

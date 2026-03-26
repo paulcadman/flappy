@@ -1,5 +1,4 @@
 import Flappy.Config
-import Batteries.Data.Rat
 
 namespace Flappy
 

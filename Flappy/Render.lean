@@ -51,10 +51,11 @@ def Bird.render
 
 def State.render
   (s : State) : m Unit := do
-  MonadRender.clearBackground (← readThe Config).window.backgroundColor
+  let config ← readThe Config
+  MonadRender.clearBackground config.window.backgroundColor
   for p in s.pipes do p.render
   s.bird.render
-  MonadRender.drawText s!"score : {s.score}" 20 20 20 (← readThe Config).window.scoreTextColor
-  if (← s.hasCollision) then MonadRender.drawText s!"GAME OVER - SCORE: {s.score} - press R to restart" ((← readThe Config).window.width / 2 - 200) ((← readThe Config).window.height / 2 - 20) 20 (← readThe Config).window.endTextColor
+  MonadRender.drawText s!"score : {s.score}" 20 20 20 config.window.scoreTextColor
+  if (← s.hasCollision) then MonadRender.drawText config.gameOverText config.gameOverPosition.fst config.gameOverPosition.snd 20 (← readThe Config).window.endTextColor
 
 end Flappy

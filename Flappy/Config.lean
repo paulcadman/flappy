@@ -62,5 +62,9 @@ structure Config where
   /-- Downward acceleration added to the bird velocity each tick in
   y-scaled units per tick -/
   gravityStep : Int := 1
+  /-- Text displayed on game over -/
+  gameOverText : String
+  /-- Game over text position -/
+  gameOverPosition : Nat × Nat
 
 end Flappy
