@@ -8,7 +8,7 @@ open Raylean.Types
 open Flappy
 open FlappyRaylean
 
-abbrev AppM := StateT State (ReaderT Config (ReaderT Assets IO))
+abbrev AppM := StateT StdGen (StateT State (ReaderT Config (ReaderT Assets IO)))
 
 def config : Config :=
   let width : Nat := 800
@@ -46,7 +46,9 @@ def config : Config :=
   }
 
 def renderLoop
-  (initState : IO State) : AppM Unit := do
+  (initStdGen : IO StdGen)
+  (initState : State)
+  : AppM Unit := do
   let tickDt : Float := (← readThe Config).tickDt
   let mut acc : Float := 0
   while (not (← windowShouldClose)) do
@@ -57,31 +59,37 @@ def renderLoop
       let s ← getThe State
       if !(← s.hasCollision)
         then set (← s.step click)
-        else if (← isKeyDown Key.r) then set (← initState)
+        else if (← isKeyDown Key.r) then do
+          set initState
+          set (← initStdGen)
       acc := acc - tickDt
     renderFrame (← (getThe State)).render
 
 def render
-  (initState : IO State) : ReaderT Config (ReaderT Assets IO) Unit := do
-  renderLoop initState |>.run' (← initState)
+  (initStdGen : IO StdGen)
+  (initState : State)
+  : ReaderT Config (ReaderT Assets IO) Unit := do
+  renderLoop initStdGen initState |>.run' (← initStdGen) |>.run' initState
   closeWindow
 
 def main : IO Unit := do
   initWindow 800 600 "Flappy"
   setConfigFlags Flags.vsyncHint
 
-  let initState : IO State := do
+  let initStdGen : IO StdGen := do
     let bytes ← IO.getRandomBytes 8
     let seed : Nat := bytes.toUInt64BE! |>.toNat
-    pure {
+    pure (mkStdGen seed)
+
+  let initState : State :=
+    {
       bird :=  {
           y := config.yScale * config.window.height / 3,
           velocity := config.bird.flapVelocity
         }
       pipes := [],
-      randGen := mkStdGen seed
     }
 
   let assets ← Assets.load
 
-  render initState |>.run config |>.run assets
+  render initStdGen initState |>.run config |>.run assets

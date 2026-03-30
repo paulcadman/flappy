@@ -11,24 +11,30 @@ structure State where
   ticksSinceFlap : Nat := 0
   tick : Nat := 0
   score : Nat := 0
-  randGen : StdGen
 
 namespace State
 
 section rand
 
-def randFin (g : StdGen) (n : Nat) (h : 0 < n) : StdGen × Fin n :=
-  let (x, g) := RandomGen.next g
-  ⟨g, x % n, Nat.mod_lt x h⟩
+variable
+  {m}
+  [Monad m]
+  [MonadStateOf StdGen m]
 
-def randRange (g : StdGen) (lo hi : Nat) (h : lo < hi) :
-  StdGen × { x : Nat // lo <= x ∧ x <= hi } :=
+def randFin (n : Nat) (h : 0 < n) : m (Fin n) := do
+  let g ← getThe StdGen
+  let (x, g) := RandomGen.next g
+  set g
+  pure ⟨x % n, Nat.mod_lt x h⟩
+
+def randRange (lo hi : Nat) (h : lo < hi) : m { x : Nat // lo <= x ∧ x <= hi } := do
+  let g ← getThe StdGen
   let n := hi - lo + 1
-  let ⟨g, k, _⟩ := randFin g n (Nat.zero_lt_succ (hi - lo))
+  let ⟨k, _⟩ ← randFin n (Nat.zero_lt_succ (hi - lo))
   let x := lo + k
   let hxLo : lo <= x := Nat.le_add_right lo k
   let hxHi : x <= hi := by omega
-  ⟨g, x, hxLo, hxHi⟩
+  pure ⟨x, hxLo, hxHi⟩
 
 end rand
 
@@ -39,21 +45,21 @@ variable
   [Monad m]
   [MonadReaderOf Config m]
 
-def spawnPipe (g : StdGen) : m (StdGen × Pipe) := do
+def spawnPipe [MonadStateOf StdGen m] : m Pipe := do
   let config ← readThe Config
   let minGapTop := config.pipe.margin
   let maxGapTop := config.window.height - config.pipe.margin - config.pipe.gapSize
-  let (g, gapTop) ←
+  let gapTop ←
     if h : minGapTop < maxGapTop then
-      let ⟨g, y, _⟩ := State.randRange g minGapTop maxGapTop h
-      pure (g, y)
+      let ⟨y, _⟩ ← State.randRange minGapTop maxGapTop h
+      pure y
     else
-      pure (g, minGapTop)
+      pure minGapTop
   pure
-    (g, { x := config.window.width,
-          width := config.pipe.width
-          gapTop := gapTop
-          gapBottom := gapTop + config.pipe.gapSize })
+    { x := config.window.width,
+      width := config.pipe.width
+      gapTop := gapTop
+      gapBottom := gapTop + config.pipe.gapSize }
 
 def shouldSpawnPipe (pipes : List Pipe) : m Bool := do
   let config ← readThe Config
@@ -75,10 +81,10 @@ def stepPipes
   pipes'.filter (fun p => p.rightEdge > 0) |> pure
 
 def step
+  [MonadStateOf StdGen m]
   (state : State)
   (isSpaceDown : Bool)
   : m State := do
-  let mut randGen := state.randGen
   let steppedPipes ← state.pipes.mapM' (fun p => p.step)
   let birdX ← state.bird.leftEdge
   let scoreInc :=
@@ -90,9 +96,8 @@ def step
     let nextPipes := steppedPipes.filter (fun p => p.rightEdge > 0)
     if ← shouldSpawnPipe nextPipes
       then do
-        let res ← spawnPipe randGen
-        randGen := res.1
-        nextPipes ++ [res.2] |> pure
+        let res ← spawnPipe
+        nextPipes ++ [res] |> pure
       else nextPipes |> pure
   let shouldFlap := isSpaceDown && state.ticksSinceFlap > 0
   let bird' ← state.bird.step shouldFlap
@@ -103,7 +108,6 @@ def step
       ticksSinceFlap := if isSpaceDown then 0 else state.ticksSinceFlap + 1,
       tick := state.tick + 1,
       pipes,
-      randGen,
       score := state.score + scoreInc
   }
 
