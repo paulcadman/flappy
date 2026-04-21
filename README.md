@@ -33,3 +33,29 @@ make run
 ```
 
 Press SPACE to flap.
+
+## Building for Linux
+
+The project `Makefile` uses `pkg-config` to find dependencies, so it should work
+if you have a C compiler installed and the dependencies listed in step 2. are
+discoverable using `pkg-config`.
+
+I have tested this with Arch linux, the `pkg-config` file was missing from the
+`resvg` package so for the build to work you have to manually add the following
+file:
+
+`/usr/local/lib/pkgconfig/resvg.pc`
+``` text
+prefix=/usr
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: resvg
+Description: SVG rendering library
+Version: 0.47.0
+Libs: -L${libdir} -lresvg
+Cflags: -I${includedir}
+```
+
+If you get it to work with other Linux distros then let me know and I will
+update this section.
